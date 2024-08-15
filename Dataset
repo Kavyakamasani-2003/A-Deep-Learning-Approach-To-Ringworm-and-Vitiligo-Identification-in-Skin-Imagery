@@ -1,0 +1,14 @@
+Dataset description: This dataset contains a collection of skin images divided into training and testing sets for the purpose of skin disease classification.
+
+1. Data Structure
+     Training Set: Comprises 1693 images
+     Testing Set: Consists of 332 images
+
+2. Image Content: Each image in the dataset represents a skin condition or lesion. The exact skin conditions included should be specified.
+    For example: Ringworm and Vitiligo
+
+3. Dataset Link: https://www.kaggle.com/
+
+4. Code for loading the dataset in Google Colab:
+    from google.colab import drive
+    drive.mount('/content/drive',force_remount=True)
