@@ -1,0 +1,57 @@
+Code: 
+import cv2
+import os
+from skimage import exposure
+
+def resize_image(image, target_size=(256, 256)):
+    if image is not None and not image.size == 0:
+        resized_image = cv2.resize(image, target_size)
+        return resized_image
+    else:
+        return None
+
+def normalize_image(image):
+    if image is not None and not image.size == 0:
+        normalized_image = exposure.equalize_adapthist(image, clip_limit=0.03)
+        return normalized_image
+    else:
+        return None
+
+def preprocess_dataset(dataset_path, output_path):
+    for class_folder in os.listdir(dataset_path):
+        class_path = os.path.join(dataset_path, class_folder)
+        output_class_path = os.path.join(output_path, class_folder)
+
+        if not os.path.exists(output_class_path):
+            os.makedirs(output_class_path)
+
+        for image_name in os.listdir(class_path):
+            image_path = os.path.join(class_path, image_name)
+            output_image_path = os.path.join(output_class_path, image_name)
+
+            # Read the image
+            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+            # Check if the image is valid
+            if image is not None and not image.size == 0:
+                # Resize the image
+                resized_image = resize_image(image)
+
+                # Normalize the image
+                normalized_image = normalize_image(resized_image)
+
+                if normalized_image is not None:
+                    # Save the preprocessed image
+                    cv2.imwrite(output_image_path, normalized_image)
+                else:
+                    print(f"Error processing image: {image_path}")
+
+if __name__ == "__main__":
+    # Set the dataset path to "/content/drive/MyDrive/SKIN"
+    dataset_path = '/content/drive/MyDrive/SKIN'
+
+    # Replace 'preprocessed_dataset' with the desired output path
+    output_path = '/content/drive/MyDrive/preprocessed_dataset'
+
+    preprocess_dataset(dataset_path, output_path)
+     
