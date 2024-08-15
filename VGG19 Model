@@ -1,0 +1,242 @@
+Training of VGG19 Model Code:
+
+import tensorflow as tf
+from tensorflow.keras.applications import VGG19
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
+from tensorflow.keras.models import Model
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+# Define paths
+train_data_dir = "/content/drive/MyDrive/SKIN/Train"
+input_shape = (224, 224)
+batch_size = 32
+num_classes = 2
+epochs = 25
+
+# Data preprocessing and augmentation
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    validation_split=0.3  # Split data into 70% training and 30% validation
+)
+
+train_generator = train_datagen.flow_from_directory(
+    train_data_dir,
+    target_size=input_shape,
+    batch_size=batch_size,
+    class_mode='categorical',
+    subset='training'  # Specify subset as training
+)
+
+validation_generator = train_datagen.flow_from_directory(
+    train_data_dir,
+    target_size=input_shape,
+    batch_size=batch_size,
+    class_mode='categorical',
+    subset='validation'  # Specify subset as validation
+)
+
+# Load pre-trained VGG19 model
+base_model = VGG19(weights='imagenet', include_top=False)
+
+# Add custom classification layers
+x = base_model.output
+x = GlobalAveragePooling2D()(x)
+x = Dense(1024, activation='relu')(x)
+predictions = Dense(num_classes, activation='softmax')(x)
+
+# Create final model
+model = Model(inputs=base_model.input, outputs=predictions)
+
+# Freeze the layers in the base model
+for layer in base_model.layers:
+    layer.trainable = False
+
+# Compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+model.fit(
+    train_generator,
+    steps_per_epoch=train_generator.samples // batch_size,
+    epochs=epochs,
+    validation_data=validation_generator,
+    validation_steps=validation_generator.samples // batch_size
+)
+
+# Save the trained model
+model.save("/content/drive/MyDrive/SKIN/vgg19_skin_disease_model.h5")
+
+OUTPUT:   
+Found 1167 images belonging to 2 classes.
+Found 499 images belonging to 2 classes.
+Downloading data from https://storage.googleapis.com/tensorflow/keras-applications/vgg19/vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5
+80134624/80134624 [==============================] - 0s 0us/step
+Epoch 1/25
+36/36 [==============================] - 801s 22s/step - loss: 0.3549 - accuracy: 0.8520 - val_loss: 0.5925 - val_accuracy: 0.7104
+Epoch 2/25
+36/36 [==============================] - 816s 23s/step - loss: 0.1540 - accuracy: 0.9489 - val_loss: 1.1153 - val_accuracy: 0.6687
+Epoch 3/25
+36/36 [==============================] - 824s 23s/step - loss: 0.1197 - accuracy: 0.9559 - val_loss: 0.8098 - val_accuracy: 0.7521
+Epoch 4/25
+36/36 [==============================] - 814s 23s/step - loss: 0.0956 - accuracy: 0.9648 - val_loss: 0.6920 - val_accuracy: 0.7500
+Epoch 5/25
+36/36 [==============================] - 786s 22s/step - loss: 0.0637 - accuracy: 0.9780 - val_loss: 0.7554 - val_accuracy: 0.7708
+Epoch 6/25
+36/36 [==============================] - 784s 22s/step - loss: 0.0680 - accuracy: 0.9744 - val_loss: 0.9892 - val_accuracy: 0.7521
+Epoch 7/25
+36/36 [==============================] - 811s 23s/step - loss: 0.0606 - accuracy: 0.9789 - val_loss: 0.8481 - val_accuracy: 0.7833
+Epoch 8/25
+36/36 [==============================] - 784s 22s/step - loss: 0.0370 - accuracy: 0.9930 - val_loss: 0.9524 - val_accuracy: 0.7604
+Epoch 9/25
+36/36 [==============================] - 810s 23s/step - loss: 0.0467 - accuracy: 0.9841 - val_loss: 1.5520 - val_accuracy: 0.7021
+Epoch 10/25
+36/36 [==============================] - 811s 23s/step - loss: 0.0493 - accuracy: 0.9850 - val_loss: 1.2190 - val_accuracy: 0.7229
+Epoch 11/25
+36/36 [==============================] - 779s 22s/step - loss: 0.0425 - accuracy: 0.9850 - val_loss: 1.1094 - val_accuracy: 0.7625
+Epoch 12/25
+36/36 [==============================] - 779s 22s/step - loss: 0.0325 - accuracy: 0.9894 - val_loss: 1.2306 - val_accuracy: 0.7500
+Epoch 13/25
+36/36 [==============================] - 809s 23s/step - loss: 0.0312 - accuracy: 0.9921 - val_loss: 1.1228 - val_accuracy: 0.7812
+Epoch 14/25
+36/36 [==============================] - 809s 23s/step - loss: 0.0307 - accuracy: 0.9885 - val_loss: 0.9877 - val_accuracy: 0.7979
+Epoch 15/25
+36/36 [==============================] - 796s 22s/step - loss: 0.0485 - accuracy: 0.9815 - val_loss: 1.3303 - val_accuracy: 0.7500
+Epoch 16/25
+36/36 [==============================] - 777s 22s/step - loss: 0.0172 - accuracy: 0.9965 - val_loss: 1.2974 - val_accuracy: 0.7604
+Epoch 17/25
+36/36 [==============================] - 777s 22s/step - loss: 0.0407 - accuracy: 0.9841 - val_loss: 1.7907 - val_accuracy: 0.7208
+Epoch 18/25
+36/36 [==============================] - 811s 23s/step - loss: 0.0364 - accuracy: 0.9877 - val_loss: 1.9198 - val_accuracy: 0.6958
+Epoch 19/25
+36/36 [==============================] - 808s 23s/step - loss: 0.0238 - accuracy: 0.9938 - val_loss: 1.8698 - val_accuracy: 0.7396
+Epoch 20/25
+36/36 [==============================] - 808s 23s/step - loss: 0.0148 - accuracy: 0.9974 - val_loss: 1.5451 - val_accuracy: 0.7604
+Epoch 21/25
+36/36 [==============================] - 810s 23s/step - loss: 0.0169 - accuracy: 0.9956 - val_loss: 1.1464 - val_accuracy: 0.7854
+Epoch 22/25
+36/36 [==============================] - 809s 23s/step - loss: 0.0296 - accuracy: 0.9912 - val_loss: 2.1253 - val_accuracy: 0.6958
+Epoch 23/25
+36/36 [==============================] - 808s 23s/step - loss: 0.0239 - accuracy: 0.9912 - val_loss: 1.7291 - val_accuracy: 0.7625
+Epoch 24/25
+36/36 [==============================] - 810s 23s/step - loss: 0.0179 - accuracy: 0.9938 - val_loss: 1.4993 - val_accuracy: 0.7729
+Epoch 25/25
+36/36 [==============================] - 809s 23s/step - loss: 0.0223 - accuracy: 0.9903 - val_loss: 1.6433 - val_accuracy: 0.7542
+/usr/local/lib/python3.10/dist-packages/keras/src/engine/training.py:3103: UserWarning: You are saving your model as an HDF5 file via `model.save()`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')`.
+  saving_api.save_model(
+
+TESTING OF VGG19 MODEL CODE: 
+
+import os
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+# Load the pre-trained VGG19 model
+model_path = "/content/drive/MyDrive/SKIN/vgg19_skin_disease_model.h5"
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Model file not found at: {model_path}")
+model = tf.keras.models.load_model(model_path)
+
+# Define the test data directory
+test_dir = "/content/drive/MyDrive/SKIN/Test"
+
+# Preprocess the test images using ImageDataGenerator
+test_datagen = ImageDataGenerator(rescale=1./255)
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=(224, 224),  # VGG19 input size is 224x224
+    batch_size=32,
+    class_mode='categorical',
+    shuffle=False
+)
+# Evaluate the model on the test data
+loss, accuracy = model.evaluate(test_generator)
+print("Test Accuracy:", accuracy)
+
+Output: 
+
+Found 388 images belonging to 1 classes.
+13/13 [==============================] - 187s 14s/step - loss: 10.8909 - accuracy: 0.7990
+Test Accuracy: 0.7989690899848938
+
+CONFUSION MATRIX: 
+
+import os
+import numpy as np
+from keras.models import load_model
+from keras.preprocessing import image
+from keras.applications.resnet import preprocess_input
+from sklearn.metrics import classification_report, confusion_matrix
+
+# Load the trained model
+model_path = '/content/drive/MyDrive/SKIN/skin_disease_model.h5'
+model = load_model(model_path)
+
+# Function to preprocess an image
+def preprocess_image(img_path):
+    img = image.load_img(img_path, target_size=(224, 224))
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    return preprocess_input(img_array)
+
+# Define the testing path
+testing_path = '/content/drive/MyDrive/SKIN/Test'
+
+# Check if testing path exists and contains subdirectories
+if not os.path.exists(testing_path) or not os.listdir(testing_path):
+    print("Testing path is empty or does not exist.")
+else:
+    # Extract class labels
+    class_labels = sorted(os.listdir(testing_path))
+
+    # Initialize lists to store true and predicted labels
+    true_labels = []
+    predicted_labels = []
+
+    # Iterate over each class folder
+    for class_label in class_labels:
+        class_path = os.path.join(testing_path, class_label)
+
+        # Iterate over each image in the class folder
+        for img_name in os.listdir(class_path):
+            img_path = os.path.join(class_path, img_name)
+
+            # Preprocess the image
+            img_array = preprocess_image(img_path)
+
+            # Predict the class label
+            predictions = model.predict(img_array)
+            predicted_class_index = np.argmax(predictions)
+
+            # Check if predicted class index is within the range of available class labels
+            if predicted_class_index < len(class_labels):
+                predicted_class = class_labels[predicted_class_index]
+                # Store true and predicted labels
+                true_labels.append(class_label)
+                predicted_labels.append(predicted_class)
+            else:
+                print(f"Predicted class index {predicted_class_index} is out of range for image {img_path}")
+
+    # Print classification report and confusion matrix
+    print("Classification Report:")
+    print(classification_report(true_labels, predicted_labels))
+
+    print("Confusion Matrix:")
+    print(confusion_matrix(true_labels, predicted_labels))
+
+Output: 
+
+Classification Report:
+              precision    recall  f1-score   support
+
+     testing       1.00      1.00      1.00       240
+
+    accuracy                           1.00       240
+   macro avg       1.00      1.00      1.00       240
+weighted avg       1.00      1.00      1.00       240
+
+Confusion Matrix:
+[[240]]
