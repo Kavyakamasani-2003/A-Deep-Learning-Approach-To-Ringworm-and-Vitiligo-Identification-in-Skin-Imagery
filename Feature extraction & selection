@@ -1,0 +1,162 @@
+FEATURE EXTRACTION CODE: Feature Extraction using Ensemble Local Binary Patterns and Grey-Level Co-ocurrence Matrix
+
+import os
+import cv2
+import numpy as np
+from skimage import feature
+from skimage.feature import greycomatrix
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from skimage import feature
+from skimage.feature import greycomatrix
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# Function to compute GLCM features
+def compute_glcm_features(image):
+    if image is None or image.size == 0:
+        return [0, 0, 0, 0]  # Return placeholder values if the image is invalid
+
+    # Convert image to grayscale
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Specify GLCM properties
+    distances = [1, 2, 3]
+    angles = [0, np.pi/4, np.pi/2, 3*np.pi/4]
+
+    # Calculate GLCM
+    glcm = greycomatrix(gray_image, distances=distances, angles=angles, symmetric=True, normed=True)
+
+    # Flatten the GLCM matrix before computing mean
+    flat_glcm = glcm.flatten()
+
+    # Extract relevant GLCM features
+    contrast = np.mean(flat_glcm[:4])
+    energy = np.mean(flat_glcm[4:8])
+    homogeneity = np.mean(flat_glcm[8:12])
+    correlation = np.mean(flat_glcm[12:16])
+
+    return [contrast, energy, homogeneity, correlation]
+
+# Function to compute LBP features
+def compute_lbp_features(image):
+    if image is None or image.size == 0:
+        return [0] * 10  # Return placeholder values if the image is invalid
+
+    # Convert image to grayscale if not already
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Compute LBP features
+    lbp = feature.local_binary_pattern(gray_image, P=8, R=1, method="uniform")
+    (hist, _) = np.histogram(lbp.ravel(), bins=np.arange(0, 10 + 1), range=(0, 10))
+
+    # Normalize the histogram
+    hist = hist.astype("float")
+    hist /= (hist.sum() + 1e-7)
+
+    return hist.tolist()
+
+# Function to preprocess and extract features from the dataset
+def extract_features(dataset_path):
+    features = []
+    labels = []
+
+    for class_folder in os.listdir(dataset_path):
+        class_path = os.path.join(dataset_path, class_folder)
+
+        for image_name in os.listdir(class_path):
+            image_path = os.path.join(class_path, image_name)
+
+            # Read the image
+            image = cv2.imread(image_path)
+
+            # Extract features from GLCM
+            glcm_features = compute_glcm_features(image)
+
+            # Extract features from LBP
+            lbp_features = compute_lbp_features(image)
+
+            # Combine features
+            combined_features = glcm_features + lbp_features
+
+            # Append to the feature list
+            features.append(combined_features)
+            labels.append(class_folder)
+
+    return np.array(features), np.array(labels)
+
+if __name__ == "__main__":
+    # Set the dataset path to "/content/drive/MyDrive/SKIN"
+    dataset_path = '/content/drive/MyDrive/SKIN'
+
+    # Extract features from the dataset
+    features, labels = extract_features(dataset_path)
+
+    # Encode labels to numerical values
+    label_encoder = LabelEncoder()
+    labels_encoded = label_encoder.fit_transform(labels)
+
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(features, labels_encoded, test_size=0.3, random_state=42)
+
+    # Train a Random Forest classifier (you can choose other classifiers as needed)
+    classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+    classifier.fit(X_train, y_train)
+
+    # Make predictions on the test set
+    y_pred = classifier.predict(X_test)
+
+    # Evaluate the classifier
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy: {accuracy}")
+    print("Classification Report:\n", classification_report(y_test, y_pred))
+     
+Output:
+Accuracy: 1.0
+Classification Report:
+               precision    recall  f1-score   support
+
+           1       1.00      1.00      1.00         1
+
+    accuracy                           1.00         1
+   macro avg       1.00      1.00      1.00         1
+weighted avg       1.00      1.00      1.00         1
+
+Feature Selection Code: Feature selection using Random Forest Classifier
+
+from sklearn.feature_selection import RFE
+from sklearn.metrics import accuracy_score, classification_report
+# Use Recursive Feature Elimination (RFE) for feature selection
+rfe = RFE(classifier, n_features_to_select=5)  # You can adjust the number of features to select
+X_train_rfe = rfe.fit_transform(X_train, y_train)
+X_test_rfe = rfe.transform(X_test)
+
+# Train a new classifier on the selected features
+classifier_selected = RandomForestClassifier(n_estimators=100, random_state=42)
+classifier_selected.fit(X_train_rfe, y_train)
+
+# Make predictions on the test set using the selected features
+y_pred_rfe = classifier_selected.predict(X_test_rfe)
+
+# Evaluate the classifier with feature selection
+accuracy_rfe = accuracy_score(y_test, y_pred_rfe)
+print(f"Accuracy with feature selection: {accuracy_rfe}")
+print("Classification Report with feature selection:\n", classification_report(y_test, y_pred_rfe))
+
+# Print the selected features
+selected_feature_indices = np.where(rfe.support_)[0]
+print("Selected Features:", selected_feature_indices)
+     
+Output: 
+Accuracy with feature selection: 1.0
+Classification Report with feature selection:
+               precision    recall  f1-score   support
+
+           1       1.00      1.00      1.00         1
+
+    accuracy                           1.00         1
+   macro avg       1.00      1.00      1.00         1
+weighted avg       1.00      1.00      1.00         1
+
+Selected Features: [ 9 10 11 12 13]
